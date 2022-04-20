@@ -62,11 +62,11 @@ void arp_req(uint8_t *target_ip)
     buf_init(&txbuf, sizeof(arp_pkt_t));
 
     // 填写ARP报头
-    arp_pkt_t arp_data = arp_init_pkt;
+    arp_pkt_t __arp_pkt = arp_init_pkt;
     // ARP操作类型为ARP_REQUEST，注意大小端转换
-    arp_data.opcode16 = swap16(ARP_REQUEST);
-    memcpy(arp_data.target_ip, target_ip, NET_IP_LEN);
-    memcpy(txbuf.data, &arp_data, sizeof(arp_pkt_t));
+    __arp_pkt.opcode16 = swap16(ARP_REQUEST);
+    memcpy(__arp_pkt.target_ip, target_ip, NET_IP_LEN);
+    memcpy(txbuf.data, &__arp_pkt, sizeof(arp_pkt_t));
 
     uint8_t broadcast_mac[6] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
@@ -86,11 +86,11 @@ void arp_resp(uint8_t *target_ip, uint8_t *target_mac)
     buf_init(&txbuf, sizeof(arp_pkt_t));
 
     // 填写ARP报头首部
-    arp_pkt_t arp_data = arp_init_pkt;
-    arp_data.opcode16 = swap16(ARP_REPLY);
-    memcpy(arp_data.target_ip, target_ip, NET_IP_LEN);
-    memcpy(arp_data.target_mac, target_mac, NET_IP_LEN);
-    memcpy(txbuf.data, &arp_data, sizeof(arp_data));
+    arp_pkt_t __arp_pkt = arp_init_pkt;
+    __arp_pkt.opcode16 = swap16(ARP_REPLY);
+    memcpy(__arp_pkt.target_ip, target_ip, NET_IP_LEN);
+    memcpy(__arp_pkt.target_mac, target_mac, NET_MAC_LEN);
+    memcpy(txbuf.data, &__arp_pkt, sizeof(__arp_pkt));
 
     // 调用ethernet_out函数将ARP报文发送出去
     ethernet_out(&txbuf, target_mac, NET_PROTOCOL_ARP);
@@ -107,7 +107,7 @@ void arp_in(buf_t *buf, uint8_t *src_mac)
     arp_pkt_t *arp_pkt = (arp_pkt_t *)buf->data;
 
     // 判断数据长度，并查看报文是否完整
-    if (
+    if (buf->len < sizeof(arp_pkt_t) || 
         arp_pkt->hw_type16 != swap16(ARP_HW_ETHER) ||
         arp_pkt->pro_type16 != swap16(NET_PROTOCOL_IP) ||
         arp_pkt->hw_len != NET_MAC_LEN ||
@@ -124,7 +124,8 @@ void arp_in(buf_t *buf, uint8_t *src_mac)
 
     // 如果有缓存，处理该待发送的数据包
     if (__arp_buf != NULL) {
-        ethernet_out(__arp_buf, arp_pkt->sender_mac, arp_pkt->pro_type16);
+        // ethernet_out(__arp_buf, arp_pkt->sender_mac, arp_pkt->pro_type16);
+        ethernet_out(__arp_buf, arp_pkt->sender_mac, NET_PROTOCOL_IP);
         map_delete(&arp_buf, arp_pkt->sender_ip);
         return;
     }
@@ -161,7 +162,7 @@ void arp_out(buf_t *buf, uint8_t *ip)
 
     // 如果没有包，则调用map_set()函数将来自IP层的数据包缓存到arp_buf
     // 然后，调用arp_req()函数，发一个请求目标IP地址对应的MAC地址的ARP request报文
-    if ((arp_pkt_t *)map_get(&arp_buf, ip) == NULL) {
+    if (map_get(&arp_buf, ip) == NULL) {
         map_set(&arp_buf, ip, buf);
         arp_req(ip);
     }
