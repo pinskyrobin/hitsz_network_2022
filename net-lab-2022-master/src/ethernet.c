@@ -10,24 +10,19 @@
  */
 void ethernet_in(buf_t *buf)
 {
-    // 首先判断数据长度，如果数据长度小于以太网头部长度，则认为数据包不完整，丢弃不处理
-    if (buf->len < 14)
+    //获取数据包的起始地址
+    ether_hdr_t *eth_hdr = (ether_hdr_t *)buf->data;
+
+    // 判断数据长度，如果数据长度小于以太网头部长度，则认为数据包不完整，丢弃不处理
+    if (buf->len < sizeof(ether_hdr_t))
         return;
-
-    // 获取源mac地址
-    uint8_t *src = &buf->data[6];
-
-    // 得到以太网数据帧的协议类型
-    uint16_t *protocol_addr = &buf->data[12];
-
-    // 大小端转换
-    uint16_t protocol = swap16(*protocol_addr);
 
     // 调用buf_remove_header()函数移除加以太网包头
     buf_remove_header(buf, sizeof(ether_hdr_t));
 
+
     // 调用net_in()函数向上层传递数据包
-    net_in(buf, protocol, src);
+    net_in(buf, swap16(eth_hdr->protocol16), eth_hdr->src);
 }
 /**
  * @brief 处理一个要发送的数据包
