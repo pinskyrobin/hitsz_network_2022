@@ -63,8 +63,14 @@ void arp_req(uint8_t *target_ip)
 
     // 填写ARP报头
     arp_pkt_t __arp_pkt = arp_init_pkt;
+    __arp_pkt.hw_type16 = swap16(ARP_HW_ETHER);
+    __arp_pkt.pro_type16 = swap16(NET_PROTOCOL_IP);
+    __arp_pkt.hw_len = NET_MAC_LEN;
+    __arp_pkt.pro_len = NET_IP_LEN;
     // ARP操作类型为ARP_REQUEST，注意大小端转换
     __arp_pkt.opcode16 = swap16(ARP_REQUEST);
+    memcpy(__arp_pkt.sender_mac,net_if_mac,NET_MAC_LEN);
+    memcpy(__arp_pkt.sender_ip,net_if_ip,NET_IP_LEN);
     memcpy(__arp_pkt.target_ip, target_ip, NET_IP_LEN);
     memcpy(txbuf.data, &__arp_pkt, sizeof(arp_pkt_t));
 
@@ -87,8 +93,14 @@ void arp_resp(uint8_t *target_ip, uint8_t *target_mac)
 
     // 填写ARP报头首部
     arp_pkt_t __arp_pkt = arp_init_pkt;
+    __arp_pkt.hw_type16 = swap16(ARP_HW_ETHER);
+    __arp_pkt.pro_type16 = swap16(NET_PROTOCOL_IP);
+    __arp_pkt.hw_len = NET_MAC_LEN;
+    __arp_pkt.pro_len = NET_IP_LEN;
     __arp_pkt.opcode16 = swap16(ARP_REPLY);
+    memcpy(__arp_pkt.sender_ip,net_if_ip,NET_IP_LEN);
     memcpy(__arp_pkt.target_ip, target_ip, NET_IP_LEN);
+    memcpy(__arp_pkt.sender_mac,net_if_mac,NET_MAC_LEN);
     memcpy(__arp_pkt.target_mac, target_mac, NET_MAC_LEN);
     memcpy(txbuf.data, &__arp_pkt, sizeof(__arp_pkt));
 
