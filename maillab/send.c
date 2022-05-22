@@ -198,8 +198,13 @@ void send_mail(const char* receiver, const char* subject, const char* msg, const
     send(s_fd, from, strlen(from), 0);
     send(s_fd, "\r\nTo: ", strlen("\r\nTo: "), 0);
     send(s_fd, receiver, strlen(receiver), 0);
-    send(s_fd, "\r\nSubject: ", strlen("\r\nSubject: "), 0);
-    send(s_fd, subject, strlen(subject), 0);
+
+    if (subject != NULL)
+    {
+        send(s_fd, "\r\nSubject: ", strlen("\r\nSubject: "), 0);
+        send(s_fd, subject, strlen(subject), 0);
+    }
+
     send(s_fd, "\r\nMIME-Version: 1.0", strlen("\r\nMIME-Version: 1.0"), 0);
     send(s_fd, "\r\nContent-Type: multipart/mixed; boundary=\"----=_boundary\"", strlen("\r\nContent-Type: multipart/mixed; boundary=\"----=_boundary\""), 0);
     send(s_fd, "\r\nContent-Transfer-Encoding: 8Bit", strlen("\r\nContent-Transfer-Encoding: 8Bit"), 0);
